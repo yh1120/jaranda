@@ -8,120 +8,75 @@ import { getUserInfo } from 'utils/getUserInfo';
 import Checkbox from 'Components/Checkbox';
 import Layout from 'Components/Layout';
 import { AiOutlineCheck } from 'react-icons/ai';
-import userDataForm from 'utils/storage/userDataForm';
 
 function Admin() {
   const [data, setData] = useState([]);
   const [searchValue, setSearchValue] = useState('');
-  const [checkedArray, setCheckedArray] = useState({});
   const [modalStyle, setModalStyle] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [pages, setPages] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
-  const [clickCheck, setClickCheck] = useState(false);
   const [isSubmit, setIsSubmit] = useState(false);
-  const checkedKeys = Object.keys(checkedArray);
-
-  useEffect(() => {
-    initSelected(LOCAL_STORAGE.get('userData'));
-  }, []);
 
   useEffect(() => {
     const userInfo = getUserInfo(pages, LIMIT, searchValue);
     setData(userInfo.userData);
     setMaxPage(userInfo.maxPage);
-    setClickCheck(false);
-  }, [pages, searchValue, clickCheck]);
+  }, [pages, searchValue, isSubmit]);
 
   const onHandleSearch = (e) => {
     setSearchValue(e.target.value);
   };
 
-  const initSelected = (userData) => {
-    let obj = new Object();
-    obj = userData.reduce(
-      (acc, cur) => ({ ...acc, [cur.userId]: cur.menubar }),
-      {},
-    );
-    setCheckedArray(obj);
-  };
-
-  const onClickChckBtn = (page, path, userId) => {
-    const seletedInfo = checkedKeys.includes(userId);
-    let obj = new Object();
-    let newSelected = [];
-
-    let innerObj = new Object();
-    innerObj['name'] = page;
-    innerObj['path'] = path;
-
-    if (seletedInfo === false || checkedArray[userId].length <= 0) {
-      newSelected.push(innerObj);
+  const onClickChckBtn = (indexs, page, path) => {
+    const selectedUserIdx = indexs;
+    const userMenu = data[selectedUserIdx].menubar;
+    const thisMenu = userMenu.findIndex((menu) => menu.name === page);
+    console.log(thisMenu);
+    let newMenu;
+    if (thisMenu === -1) {
+      newMenu = userMenu.concat([{ name: page, path: path }]);
     } else {
-      let selectedIndex = true;
-      for (const key in checkedArray[userId]) {
-        if (checkedArray[userId][key].name !== innerObj.name) {
-          selectedIndex = false;
-        } else {
-          selectedIndex = true;
-          break;
-        }
-      }
-
-      if (selectedIndex === false) {
-        newSelected = newSelected.concat(checkedArray[userId], innerObj);
-      } else {
-        newSelected = newSelected.concat(checkedArray[userId]);
-        const rmvFindIndx = newSelected.indexOf(
-          newSelected.find((elem) => elem.name === innerObj.name),
-        );
-        newSelected.splice(rmvFindIndx, 1);
-      }
+      newMenu = userMenu
+        .slice(0, thisMenu)
+        .concat(userMenu.slice(thisMenu + 1));
     }
-    for (const [key, value] of Object.entries(checkedArray)) {
-      obj[key] = value;
-    }
-    obj[userId] = newSelected;
-    setCheckedArray(obj);
+    console.log(newMenu);
+    const newUserInfo = data.map((user, idx) => {
+      if (indexs === idx) {
+        return { ...user, menubar: newMenu };
+      }
+      return user;
+    });
+    console.log(newUserInfo);
+    setData(newUserInfo);
   };
 
-  const isSelected = (name, userId) => {
-    if (checkedKeys.length > 0 && checkedKeys.includes(userId.toString())) {
-      for (const [key] of Object.entries(checkedArray[userId])) {
-        if (checkedArray[userId][Number(key)].name === name) {
-          return true;
-        }
-      }
+  const isSelected = (indexs, name) => {
+    const userMenu = data[indexs].menubar;
+    console.log(data[indexs], userMenu);
+    const temp = userMenu.findIndex((menu) => menu.name === name);
+    if (temp >= 0) {
+      return true;
     }
     return false;
   };
 
+  const sendData = (data) => {
+    const originalData = LOCAL_STORAGE.get('userData');
+    const newData = originalData.map((user) => {
+      const updatedUser = data.filter(
+        (datum) => datum.userId === user.userId,
+      )[0];
+      return updatedUser ? updatedUser : user;
+    });
+    console.log(newData);
+    LOCAL_STORAGE.set('userData', newData);
+    return true;
+  };
+
   const onClickSubmitBtn = () => {
-    const allUserData = LOCAL_STORAGE.get('userData');
-    let userArray = [];
-    for (let i = 0; i < Object.keys(allUserData).length; i++) {
-      let origin_userId = allUserData[i].userId;
-      let menubar = checkedArray[origin_userId];
-
-      userArray.push(
-        userDataForm(
-          origin_userId,
-          allUserData[i].password,
-          allUserData[i].name,
-          allUserData[i].age,
-          allUserData[i].creditCard.cardNumber,
-          allUserData[i].creditCard.holderName,
-          allUserData[i].creditCard.expired,
-          allUserData[i].creditCard.CVC,
-          allUserData[i].role,
-          allUserData[i].address,
-          menubar,
-        ),
-      );
-    }
-    LOCAL_STORAGE.set('userData', userArray);
-    setIsSubmit(true);
-
+    setIsSubmit(sendData(data));
     setTimeout(function () {
       setIsSubmit(false);
     }, 3000);
@@ -179,7 +134,7 @@ function Admin() {
             )}
 
             {isSubmit && (
-              <PageAuthButton disabled={true} onClick={onClickSubmitBtn}>
+              <PageAuthButton disabled={true}>
                 <AiOutlineCheck />
                 확정되었습니다.
               </PageAuthButton>
@@ -210,6 +165,7 @@ function Admin() {
                   <Cell>
                     {MENUS.map((property, index) => {
                       let isItemSelected = isSelected(
+                        indexs,
                         property.name,
                         data.userId,
                       );
@@ -222,6 +178,7 @@ function Admin() {
                             id={index}
                             onClick={() =>
                               onClickChckBtn(
+                                indexs,
                                 property.name,
                                 property.path,
                                 data.userId,

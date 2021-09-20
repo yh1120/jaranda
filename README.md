@@ -3,12 +3,6 @@
 <p align='middle'><img alt="GitHub top language" src="https://img.shields.io/github/languages/top/six-sense/jaranda?color=blueviolet"> <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/six-sense/jaranda"> 
 <h1 align='middle'><a href='https://jaranda.netlify.app/'>https://jaranda.netlify.app/</a></h1>
 
----
-
-🧐[노션 미팅 로그](https://first-english-d5d.notion.site/d789f1ad2e434084be98bb6c54a006b2)에서 더 다양한 개발 과정을 확인해보세요!
-
----
-
 <br/>
 
 ## 📌 프로젝트 소개
